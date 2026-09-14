@@ -21,6 +21,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { BatchSummary, UrlCheckResult } from '../types.js';
+import { formatNumber, formatDate, formatDateTime } from '../lib/format.js';
 import { UrlDetailModal } from './UrlDetailModal.js';
 import { ExportModal } from './ExportModal.js';
 import { DataCollectionVisual3D } from './DataCollectionVisual3D.js';

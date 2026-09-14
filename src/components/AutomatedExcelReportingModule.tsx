@@ -14,6 +14,7 @@ import {
   Sliders,
 } from 'lucide-react';
 import { BatchSummary } from '../types.js';
+import { formatNumber, formatDate } from '../lib/format.js';
 
 interface AutomatedExcelReportingModuleProps {
   batches: BatchSummary[];
@@ -38,7 +39,7 @@ export const AutomatedExcelReportingModule: React.FC<AutomatedExcelReportingModu
   const prevCompletedIdsRef = useRef<Set<string>>(new Set());
 
   // Filter completed batches
-  const completedBatches = batches.filter((b) => b.progress.status === 'COMPLETED');
+  const completedBatches = (batches || []).filter((b) => b?.progress?.status === 'COMPLETED');
 
   // Auto-download listener
   useEffect(() => {
@@ -267,13 +268,12 @@ export const AutomatedExcelReportingModule: React.FC<AutomatedExcelReportingModu
             {completedBatches.slice(0, 5).map((batch) => {
               const isGenerating = generatingId === batch.id;
               const isCopied = copiedBatchId === batch.id;
+              const processed = batch.progress?.processed || 0;
+              const indexed = batch.progress?.indexed || 0;
+              const likelyIndexed = batch.progress?.likelyIndexed || 0;
               const rate =
-                batch.progress.processed > 0
-                  ? Math.round(
-                      ((batch.progress.indexed + batch.progress.likelyIndexed) /
-                        batch.progress.processed) *
-                        100
-                    )
+                processed > 0
+                  ? Math.round(((indexed + likelyIndexed) / processed) * 100)
                   : 0;
 
               return (
@@ -294,25 +294,25 @@ export const AutomatedExcelReportingModule: React.FC<AutomatedExcelReportingModu
                       <span>
                         Total:{' '}
                         <strong className="text-slate-200 font-mono">
-                          {batch.progress.total.toLocaleString()} URLs
+                          {formatNumber(batch.progress?.total)} URLs
                         </strong>
                       </span>
                       <span>•</span>
                       <span>
                         Indexed:{' '}
                         <strong className="text-emerald-400 font-mono">
-                          {batch.progress.indexed} ({rate}%)
+                          {formatNumber(batch.progress?.indexed)} ({rate}%)
                         </strong>
                       </span>
                       <span>•</span>
                       <span>
                         Speed:{' '}
                         <strong className="text-sky-400 font-mono">
-                          {batch.progress.averageSpeed || batch.progress.peakSpeed || 45} URLs/s
+                          {batch.progress?.averageSpeed || batch.progress?.peakSpeed || 45} URLs/s
                         </strong>
                       </span>
                       <span>•</span>
-                      <span>{new Date(batch.createdAt).toLocaleDateString()}</span>
+                      <span>{formatDate(batch.createdAt)}</span>
                     </div>
                   </div>
 
