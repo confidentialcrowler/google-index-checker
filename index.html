@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <script>
+      (function() {
+        try {
+          var nativeFetch = window.fetch;
+          if (nativeFetch) {
+            var currentFetch = function() {
+              return nativeFetch.apply(window, arguments);
+            };
+
+            var proto = window.Window ? window.Window.prototype : Object.getPrototypeOf(window);
+            if (proto) {
+              try {
+                var protoDesc = Object.getOwnPropertyDescriptor(proto, 'fetch');
+                if (protoDesc && protoDesc.get && !protoDesc.set) {
+                  Object.defineProperty(proto, 'fetch', {
+                    get: function() {
+                      return currentFetch;
+                    },
+                    set: function(val) {
+                      currentFetch = val;
+                    },
+                    configurable: true,
+                    enumerable: true,
+                  });
+                }
+              } catch (_) {}
+            }
+
+            try {
+              Object.defineProperty(window, 'fetch', {
+                get: function() {
+                  return currentFetch;
+                },
+                set: function(val) {
+                  currentFetch = val;
+                },
+                configurable: true,
+                enumerable: true,
+              });
+            } catch (_) {}
+          }
+        } catch (e) {
+          // Fallback safely
+        }
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crawlme Index Checker Tools</title>
+    <meta name="description" content="High-throughput Google URL index verification, multi-key API rotation with fallback, real-time bulk queue processor, SEO diagnostics, and Excel reporting." />
+    <meta property="og:title" content="Crawlme Index Checker Tools" />
+    <meta property="og:description" content="High-throughput Google URL index verification, multi-key API rotation with fallback, real-time bulk queue processor, SEO diagnostics, and Excel reporting." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Crawlme Index Checker Tools</title>
+    <script>
+      // Single Page Apps for GitHub Pages
+      // Redirect 404 to index.html with query path
+      var path = window.location.pathname;
+      var repo = path.split('/')[1] || '';
+      var query = window.location.search;
+      var hash = window.location.hash;
+      window.location.replace(
+        window.location.origin + (repo ? '/' + repo : '') + '/index.html' + query + hash
+      );
+    </script>
+  </head>
+  <body>
+    <p>Redirecting to Crawlme Index Checker Tools...</p>
+  </body>
+</html>

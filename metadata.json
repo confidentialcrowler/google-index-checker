@@ -1,0 +1,7 @@
+{
+  "name": "Crawlme Index Checker Tools",
+  "description": "High-throughput Google URL index verification, multi-key API rotation with fallback, real-time bulk queue processor, SEO diagnostics, and Excel reporting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
