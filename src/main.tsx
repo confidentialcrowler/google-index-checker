@@ -6,7 +6,11 @@ import {installClientFallbackInterceptor} from './lib/clientFallback.ts';
 import './index.css';
 
 // Ensure static deployments (e.g. GitHub Pages) have mock API fallback
-installClientFallbackInterceptor();
+try {
+  installClientFallbackInterceptor();
+} catch (e) {
+  console.warn('Fallback interceptor registration notice:', e);
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

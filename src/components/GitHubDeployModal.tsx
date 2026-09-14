@@ -301,26 +301,35 @@ npm run deploy`;
             {/* Tab 3: Guide */}
             {activeTab === 'checklist' && (
               <div className="space-y-3 text-xs text-slate-300">
+                <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 space-y-1.5">
+                  <h4 className="font-bold text-amber-100 text-xs flex items-center space-x-1.5">
+                    <span>⚠️ Avoid the #1 Cause of Blank White Pages on GitHub:</span>
+                  </h4>
+                  <p className="text-[11px] text-amber-200/90 leading-relaxed">
+                    Never select <strong>&quot;Deploy from a branch &gt; main &gt; / (root)&quot;</strong>! The repository root contains raw TypeScript source files that web browsers cannot parse without a build step.
+                  </p>
+                  <p className="text-[11px] text-amber-200/90 leading-relaxed">
+                    Always use <strong>Build and deployment &gt; Source: GitHub Actions</strong> (recommended) or choose the <strong>gh-pages</strong> branch (or <strong>/docs</strong> folder) where compiled JavaScript is placed.
+                  </p>
+                </div>
+
                 <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
                   <h4 className="font-bold text-white text-xs flex items-center space-x-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>Why This Build Will Never Show a Blank Screen:</span>
+                    <span>Active Zero-Blank-Screen Protections:</span>
                   </h4>
                   <ul className="space-y-1.5 text-[11px] text-slate-300 list-disc list-inside">
                     <li>
-                      <strong>Relative Base:</strong> Configured with <code className="text-emerald-400">base: './'</code> in Vite, meaning all assets load correctly regardless of whether your repo is hosted at the root or a subpath.
+                      <strong>Trailing Slash Auto-Redirect:</strong> Automatically fixes <code className="text-emerald-400">user.github.io/repo</code> to <code className="text-emerald-400">user.github.io/repo/</code> before scripts load so relative assets never 404.
                     </li>
                     <li>
-                      <strong>Client Fallback Interceptor:</strong> Automatically detects GitHub Pages and emulates real verification jobs, SerpApi key rotation, and 2-column Google Sheets exports in <code className="text-emerald-400">localStorage</code>.
+                      <strong>Dual Build Synchronization:</strong> Compiles output to both <code className="text-emerald-400">dist/</code> and <code className="text-emerald-400">docs/</code> with Jekyll bypass (<code className="text-emerald-400">.nojekyll</code>).
                     </li>
                     <li>
-                      <strong>Jekyll Bypass:</strong> Includes <code className="text-emerald-400">.nojekyll</code> to prevent GitHub Pages from ignoring compiled Vite script files.
+                      <strong>Safe 404 Interceptor:</strong> Prevents 404.html from masquerading as a JavaScript module script when asset files are requested.
                     </li>
                     <li>
-                      <strong>404 Router:</strong> Includes <code className="text-emerald-400">404.html</code> to prevent page-not-found errors on browser reload.
-                    </li>
-                    <li>
-                      <strong>React Error Boundary:</strong> Catches unexpected runtime glitches and presents a clear recovery button instead of a white crash.
+                      <strong>In-Memory &amp; LocalStorage Fallback:</strong> Replaces missing Node.js backend with an in-browser mock engine that runs reliably even if localStorage is restricted.
                     </li>
                   </ul>
                 </div>

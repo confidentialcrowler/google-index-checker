@@ -125,6 +125,7 @@ export interface ProviderConfig {
   type: 'official_gsc' | 'serp_api' | 'index_data' | 'mock';
   enabled: boolean;
   apiKeyConfigured: boolean;
+  hasApiKey?: boolean;
   rateLimitReqPerSec: number;
   concurrencyLimit: number;
   dailyQuota: number;
@@ -149,6 +150,8 @@ export interface SystemMetrics {
   uptimeSeconds: number;
   databaseHealth: 'OPTIMAL' | 'DEGRADED';
   redisQueueHealth: 'ACTIVE' | 'EMULATED_IN_MEMORY';
+  clusterHealth?: string;
+  memoryUsageMb?: number;
 }
 
 export interface ApiKeyEntry {

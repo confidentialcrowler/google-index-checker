@@ -214,16 +214,24 @@ const DEFAULT_API_POOL: ApiPoolStatus = {
   ],
 };
 
+let memoryBatches: BatchSummary[] | null = null;
+let memoryPool: ApiPoolStatus | null = null;
+
 function getLocalBatches(): BatchSummary[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.BATCHES);
     if (raw) return JSON.parse(raw);
   } catch {}
-  localStorage.setItem(STORAGE_KEYS.BATCHES, JSON.stringify(DEFAULT_BATCHES));
+  if (memoryBatches) return memoryBatches;
+  try {
+    localStorage.setItem(STORAGE_KEYS.BATCHES, JSON.stringify(DEFAULT_BATCHES));
+  } catch {}
+  memoryBatches = DEFAULT_BATCHES;
   return DEFAULT_BATCHES;
 }
 
 function saveLocalBatches(batches: BatchSummary[]) {
+  memoryBatches = batches;
   try {
     localStorage.setItem(STORAGE_KEYS.BATCHES, JSON.stringify(batches));
   } catch {}
@@ -234,11 +242,16 @@ function getLocalPool(): ApiPoolStatus {
     const raw = localStorage.getItem(STORAGE_KEYS.KEY_POOL);
     if (raw) return JSON.parse(raw);
   } catch {}
-  localStorage.setItem(STORAGE_KEYS.KEY_POOL, JSON.stringify(DEFAULT_API_POOL));
+  if (memoryPool) return memoryPool;
+  try {
+    localStorage.setItem(STORAGE_KEYS.KEY_POOL, JSON.stringify(DEFAULT_API_POOL));
+  } catch {}
+  memoryPool = DEFAULT_API_POOL;
   return DEFAULT_API_POOL;
 }
 
 function saveLocalPool(pool: ApiPoolStatus) {
+  memoryPool = pool;
   try {
     localStorage.setItem(STORAGE_KEYS.KEY_POOL, JSON.stringify(pool));
   } catch {}
@@ -301,50 +314,116 @@ function getDummyBatchResults(batchId: string, count = 25): UrlCheckResult[] {
 export function isStaticDeployment(): boolean {
   if (typeof window === 'undefined') return false;
   const host = window.location.hostname;
+
+  // Active full-stack dev / container environments (never intercept)
+  if (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '0.0.0.0' ||
+    host.includes('run.app') ||
+    host.includes('googleusercontent.com') ||
+    host.includes('google.com') ||
+    host.includes('ai.studio')
+  ) {
+    return false;
+  }
+
+  // Pure static hosting environments
   return (
     host.endsWith('github.io') ||
     host.endsWith('pages.dev') ||
     host.endsWith('vercel.app') ||
+    host.endsWith('netlify.app') ||
     window.location.protocol === 'file:'
   );
 }
 
 const activeSimulations = new Map<string, number>();
 
+function safeDefineFetch(customFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>): boolean {
+  if (typeof window === 'undefined') return false;
+
+  // 1. Try Object.defineProperty on window (cleanly shadows prototype getter without triggering TypeError)
+  try {
+    const desc = Object.getOwnPropertyDescriptor(window, 'fetch');
+    if (!desc || desc.configurable !== false) {
+      Object.defineProperty(window, 'fetch', {
+        value: customFetch,
+        writable: true,
+        configurable: true,
+        enumerable: true,
+      });
+      return true;
+    }
+  } catch {}
+
+  // 2. Try on Window.prototype if window is sealed
+  try {
+    const proto = typeof Window !== 'undefined' ? Window.prototype : Object.getPrototypeOf(window);
+    if (proto) {
+      const protoDesc = Object.getOwnPropertyDescriptor(proto, 'fetch');
+      if (!protoDesc || protoDesc.configurable !== false) {
+        Object.defineProperty(proto, 'fetch', {
+          get: () => customFetch,
+          set: (fn) => { customFetch = fn; },
+          configurable: true,
+          enumerable: true,
+        });
+        return true;
+      }
+    }
+  } catch {}
+
+  // Note: NEVER use direct property assignment (e.g. window.fetch = customFetch)
+  // because that throws "Cannot set property fetch of #<Window> which has only a getter".
+  return false;
+}
+
 export function installClientFallbackInterceptor() {
   if (typeof window === 'undefined') return;
 
-  const originalFetch = window.fetch.bind(window);
+  // Crucial: Only install client-side fallback interceptor on verified static hosting domains (e.g. GitHub Pages)
+  // In Cloud Run, localhost, or AI Studio preview, the native backend server handles all API routes.
+  if (!isStaticDeployment()) {
+    return;
+  }
 
-  window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const urlStr = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+  try {
+    const originalFetch = typeof window.fetch === 'function' ? window.fetch.bind(window) : null;
+    if (!originalFetch) return;
 
-    // Only intercept /api/ routes
-    if (!urlStr.includes('/api/')) {
-      return originalFetch(input, init);
-    }
+    const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const urlStr = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
 
-    // Try real fetch first if not strictly on static domain
-    if (!isStaticDeployment()) {
-      try {
-        const response = await originalFetch(input, init);
-        const contentType = response.headers.get('content-type') || '';
-        if (response.ok || (response.status !== 404 && !contentType.includes('text/html'))) {
-          return response;
-        }
-      } catch {
-        // Fallback to client mock
+      // Only intercept /api/ routes
+      if (!urlStr.includes('/api/')) {
+        return originalFetch(input, init);
       }
-    }
 
-    // Handle /api/* with client-side fallback
-    try {
-      const parsedUrl = new URL(urlStr, window.location.origin);
-      const pathname = parsedUrl.pathname;
-      const method = (init?.method || 'GET').toUpperCase();
+      // Try real fetch first if in local or Cloud Run dev/preview environment
+      if (!isStaticDeployment()) {
+        try {
+          const response = await originalFetch(input, init);
+          const contentType = response.headers.get('content-type') || '';
+          if (response.ok || (response.status !== 404 && !contentType.includes('text/html'))) {
+            return response;
+          }
+        } catch {
+          // Fallback to client mock
+        }
+      }
 
-      // 1. GET /api/batches
-      if (pathname === '/api/batches' && method === 'GET') {
+      // Handle /api/* with client-side fallback
+      try {
+        const parsedUrl = new URL(urlStr, window.location.origin);
+        const rawPathname = parsedUrl.pathname;
+        // Normalize repository prefix (e.g. /my-repo/api/batches -> /api/batches)
+        const apiIdx = rawPathname.indexOf('/api/');
+        const pathname = apiIdx !== -1 ? rawPathname.substring(apiIdx) : rawPathname;
+        const method = (init?.method || 'GET').toUpperCase();
+
+        // 1. GET /api/batches
+        if (pathname === '/api/batches' && method === 'GET') {
         const batches = getLocalBatches();
         return new Response(JSON.stringify(batches), {
           status: 200,
@@ -744,4 +823,9 @@ export function installClientFallbackInterceptor() {
       });
     }
   };
+
+  safeDefineFetch(customFetch);
+} catch (err) {
+  console.warn('Could not install client fallback interceptor:', err);
+}
 }

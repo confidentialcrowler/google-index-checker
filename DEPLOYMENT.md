@@ -92,3 +92,11 @@ If you prefer deploying directly to a `gh-pages` branch:
 npm run deploy
 ```
 Then under **Settings > Pages > Source**, choose **Deploy from a branch** and select **gh-pages / (root)**.
+
+##### Method 3: Deploy from `main` branch `/docs` folder
+The build script automatically maintains a synchronized `docs/` folder containing compiled production assets:
+1. Under **Settings > Pages > Source**, choose **Deploy from a branch**.
+2. Select **Branch: main** and folder **/docs**.
+3. Save. GitHub Pages will serve the pre-compiled production build directly from the `/docs` directory!
+
+> ⚠️ **Important Warning**: Never choose **Branch: main / (root)** as your GitHub Pages source! The root contains uncompiled `.tsx` source files that browsers cannot execute directly, which causes a blank white screen. Always use **GitHub Actions**, **gh-pages / (root)**, or **main / docs**.
