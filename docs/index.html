@@ -35,6 +35,28 @@
   </head>
   <body>
     <div id="root"></div>
+
+    <script>
+      // Fallback for when GitHub Pages is accidentally configured to serve from the repo root:
+      // A static host cannot execute raw TypeScript (/src/main.tsx). If this uncompiled file
+      // is served directly on GitHub Pages, immediately redirect to /docs/ where the compiled
+      // production bundle resides.
+      (function() {
+        try {
+          var l = window.location;
+          var isStaticHost = l.hostname.endsWith('github.io') || l.hostname.endsWith('pages.dev');
+          if (isStaticHost) {
+            var isCompiled = document.querySelector('script[src*="assets/"]');
+            var inDocs = l.pathname.includes('/docs');
+            if (!isCompiled && !inDocs) {
+              var base = l.pathname.endsWith('/') ? l.pathname : l.pathname + '/';
+              l.replace(l.protocol + '//' + l.host + base + 'docs/' + l.search + l.hash);
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
+
   </body>
 </html>
 
